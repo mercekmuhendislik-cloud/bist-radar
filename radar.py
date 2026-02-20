@@ -16,24 +16,14 @@ def send_telegram_msg(message):
     try:
         requests.get(url)
     except Exception as e:
-        print(f"Mesaj gönderilemedi: {e}")
+        print(f"Hata: {e}")
 
-# ŞİRKET LİSTESİ
-bist_raw = "ACSEL, ADEL, ADESE, AGHOL, AGESA, AGROT, AHGAZ, AKBNK, AKCNS, AKSA, AKSEN, ALARK, ALBRK, ALFAS, ARCLK, ARDYZ, ASELS, ASTOR, AYDEM, BAGFS, BIMAS, BRSAN, BRYAT, CANTE, CCOLA, CIMSA, CWENE, DOAS, DOHOL, EGEEN, EKGYO, ENJSA, ENKAI, EREGL, EUHOL, EUPWR, FROTO, GARAN, GESAN, GUBRF, HALKB, HEKTS, ISCTR, ISMEN, KCAER, KCHOL, KONTR, KONYA, KORDS, KOZAA, KOZAL, KRDMD, MAVI, MIATK, MGROS, ODAS, OTKAR, OYAKC, PETKM, PGSUS, SAHOL, SASA, SISE, SKBNK, SOKM, TARKM, TAVHL, TCELL, THYAO, TKFEN, TOASO, TSKB, TTKOM, TTRAK, TUPRS, VAKBN, VESBE, VESTL, YKBNK, ZOREN" # Örnek kısaltılmış liste
+# SENİN GÜNCEL DEV LİSTEN
+bist_raw = """
+ACSEL, ADEL, ADESE, ADLVY, ADGYO, AFYON, AGHOL, AGESA, AGROT, AHSGY, AHGAZ, AKSFA, AKFK, AKMEN, AKCVR, AKBNK, AKCKM, AKCNS, AKDFA, AKYHO, AKENR, AKFGY, AKFIS, AKFYE, ATEKS, AKSGY, AKMGY, AKSA, AKSEN, AKGRT, AKSUE, AKTVK, ALCAR, ALGYO, ALARK, ALBRK, ALCTL, ALFAS, ALKIM, ALKA, AYCES, ALTNY, ALKLC, ALVES, ANSGR, AEFES, ANHYT, ASUZU, ANGEN, ANELE, ARCLK, ARDYZ, ARENA, ARFYE, ARMGD, ARSAN, ARSVY, ARTMS, ARZUM, ASGYO, ASELS, ASTOR, ATAGY, ATAVK, ATAKP, AGYO, ATLFA, ATSYH, ATLAS, ATATP, AVOD, AVGYO, AVTUR, AVHOL, AVPGY, AYDEM, AYEN, AYES, AYGAZ, AZTEK, BAGFS, BAHKM, BAKAB, BALAT, BALSU, BNTAS, BANVT, BARMA, BSRFK, BASGZ, BASCM, BEGYO, BTCIM, BSOKE, BYDNR, BAYRK, BERA, BRKT, BRKSN, BESLR, BJKAS, BEYAZ, BIENY, BIGTK, BLCYT, BLKOM, BIMAS, BINBN, BIOEN, BRKVY, BRKO, BIGEN, BRLSM, BRMEN, BIZIM, BLUME, BMSTL, BMSCH, BOBET, BORSK, BORLS, BRSAN, BRYAT, BFREN, BOSSA, BRISA, BULGS, BURCE, BURVA, BUCIM, BVSAN, BIGCH, CRFSA, CASA, CEMZY, CEOEM, CCOLA, CONSE, COSMO, CRDFA, CVKMD, CWENE, CGCAM, CAGFA, CMSAN, CANTE, CATES, CLEBI, CELHA, CLKMT, CEMAS, CEMTS, CMBTN, CMENT, CIMSA, CUSAN, DAGI, DAPGM, DARDL, DGATE, DCTTR, DGRVK, DMSAS, DENGE, DZGYO, DERIM, DERHL, DESA, DESPC, DEVA, DNISI, DIRIT, DITAS, DKVRL, DMRGD, DOCO, DOFER, DOHOL, DTRND, DGNMO, DOGVY, ARASE, DOGUB, DGGYO, DOAS, DOKTA, DURDO, DURKN, DUNYH, DNYVA, DYOBY, EBEBK, ECOGR, ECZYT, EDATA, EDIP, EFOR, EGEEN, EGGUB, EGPRO, EGSER, EPLAS, EGEGY, ECILC, EKER, EKIZ, EKOFA, EKOS, EKOVR, EKSUN, ELITE, EMKEL, EMNIS, EMIRV, EKGYO, EMVAR, ENJSA, ENERY, ENKAI, ENSRI, ERBOS, ERCB, EREGL, KIMMR, ERSU, ESCAR, ESCOM, ESEN, ETILR, EUKYO, EUYO, ETYAT, EUHOL, TEZOL, EUREN, EUPWR, EYGYO, FADE, FAIRF, FMIZP, FENER, FLAP, FONET, FROTO, FORMT, FRMPL, FORTE, FRIGO, FZLGY, GWIND, GSRAY, GARFA, GARFL, GRNYO, SNKRN, GEDIK, GEDZA, GLCVY, GENIL, GENTS, GEREL, GZNMI, GIPTA, GMTAS, GESAN, GLYHO, GOODY, GOKNR, GOLTS, GOZDE, GRTHO, GSDDE, GSDHO, GUBRF, GLRYH, GLRMK, GUNDG, GRSEL, SAHOL, HALKF, HLGYO, HLVKS, HRKET, HATEK, HATSN, HDFFL, HDFGS, HEDEF, HEKTS, HKTM, HTTBT, HOROZ, HUBVC, HUNER, HUZFA, HURGZ, ENTRA, ICBCT, ICUGS, INGRM, INVEO, INVES, ISKPL, IEYHO, IDGYO, IHEVA, IHLGM, IHGZT, IHAAS, IHLAS, IHYAY, IMASM, INALR, INDES, INFO, INTEK, INTEM, ISDMR, ISFAK, ISFIN, ISGYO, ISGSY, ISMEN, ISYAT, ISBIR, ISSEN, IZINV, IZENR, IZMDC, IZFAS, JANTS, KFEIN, KLKIM, KLSER, KAPLM, KRDMA, KRDMB, KRDMD, KAREL, KARSN, KRTEK, KARTN, KTLEV, KATMR, KAYSE, KENT, KRVGD, KERVN, KZBGY, KLGYO, KLRHO, KMPUR, KLMSN, KCAER, KCHOL, KOCMT, KLSYN, KNFRT, KONTR, KONYA, KONKA, KGYO, KORDS, KRPLS, KORTS, KOTON, KOPOL, KRGYO, KRSTL, KRONT, KSTUR, KUVVA, KUYAS, KBORU, KZGYO, KUTPO, KTSKR, LIDER, LIDFA, LILAK, LMKDC, LINK, LOGO, LKMNH, LRSHO, LUKSK, LYDHO, LYDYE, MACKO, MAKIM, MAKTK, MANAS, MAGEN, MARKA, MAALT, MRSHL, MRGYO, MARTI, MTRKS, MAVI, MZHLD, MEDTR, MEGMT, MEGAP, MEKAG, MNDRS, MEPET, MERCN, MERIT, MERKO, METRO, MTRYO, MEYSU, MHRGY, MIATK, MGROS, MSGYO, MPARK, MMCAS, MOBTL, MOGAN, MNDTR, MOPAS, EGEPO, NATEN, NTGAZ, NTHOL, NETAS, NIBAS, NUHCM, NUGYO, OBAMS, OBASE, ODAS, ODINE, OFSYM, ONCSM, ONRYT, ORCAY, ORGE, ORMA, OSMEN, OSTIM, OTKAR, OTTO, OYAKC, OYAYO, OYLUM, OZKGY, OZATD, OZGYO, OZRDN, OZSUB, OZYSR, PAMEL, PNLSN, PAGYO, PAPIL, PRFFK, PRDGS, PRKME, PARSN, PASEU, PSGYO, PAHOL, PATEK, PCILT, PGSUS, PEKGY, PENGD, PENTA, PSDTC, PETKM, PKENT, PETUN, PINSU, PNSUT, PKART, PLTUR, POLHO, POLTK, PRZMA, QFINF, QUAGR, RNPOL, RALYH, RAYSG, REEDR, RYGYO, RYSAS, RODRG, ROYAL, RGYAS, RTALB, RUBNS, SAFKR, SANEL, SNICA, SANFM, SANKO, SAMAT, SARKY, SARTN, SASA, SAYAS, SDTTR, SEGMN, SEKUR, SELEC, SELVA, SERNT, SRVGY, SEYKM, SILVR, SNGYO, SMRTG, SMART, SODSN, SOKE, SKTAS, SONME, SNPAM, SUMAS, SUNTK, SURGY, SUWEN, SEKFK, SEGYO, SKBNK, SOKM, TABGD, TNZTP, TARKM, TATGD, TATEN, TAVHL, TEKTU, TKFEN, TKNSA, TMPOL, TRHOL, TGSAS, TOASO, TRGYO, TRMET, TLMAN, TSPOR, TDGYO, TSGYO, TUCLK, TUKAS, TRCAS, TUREX, MARBL, TRILC, TCELL, TRKNT, TMSN, TUPRS, THYAO, PRKAB, TTKOM, TTRAK, TBORG, TURGG, GARAN, HALKB, ISCTR, TSKB, TURSG, SISE, VAKBN, UFUK, ULAS, ULUFA, ULUSE, ULUUN, USAK, ULKER, UNLU, VAKFN, VKGYO, VKFYO, VAKKO, VANGD, VBTYZ, VRGYO, VERUS, VERTU, VESBE, VESTL, VKING, YKBNK, YAPRK, YATAS, YYLGD, YAYLA, YGGYO, YEOTK, YGYO, YYAPI, YESIL, YBTAS, YIGIT, YONGA, YKSLN, YUNSA, ZGYO, ZEDUR, ZRGYO, ZOREN, BINHO
+"""
+
 selected_stocks = [k.strip() + ".IS" for k in bist_raw.split(",") if k.strip()]
-
-def calculate_ars(src_series):
-    ema1 = src_series.ewm(span=3, adjust=False).mean()
-    band = 1.23 / 100
-    ars_values = np.zeros(len(ema1))
-    ars_values[0] = ema1.iloc[0]
-    for i in range(1, len(ema1)):
-        prev_out = ars_values[i-1]
-        curr_ema = ema1.iloc[i]
-        if (curr_ema * (1 - band)) > prev_out: ars_values[i] = curr_ema * (1 - band)
-        elif (curr_ema * (1 + band)) < prev_out: ars_values[i] = curr_ema * (1 + band)
-        else: ars_values[i] = prev_out
-    return pd.Series(ars_values, index=src_series.index)
 
 def calculate_t3_custom(src, length, vf, multiplier):
     def ema(s, l): return s.ewm(span=l, adjust=False).mean()
@@ -55,23 +45,34 @@ def check_formation(df_resampled, last_price):
     return (t_sari < t_siyah < t_mor and last_price > t_sari)
 
 all_results = []
+tarama_sayisi = 0
+
+print(f"Tarama başlıyor: {len(selected_stocks)} hisse kontrol edilecek...")
+
 for ticker in selected_stocks:
     try:
         data = yf.download(ticker, period="1y", interval="1h", progress=False)
         if data.empty: continue
         
+        tarama_sayisi += 1
         last_close = float(data['Close'].iloc[-1])
         df_2s = data.resample('2h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
         df_4s = data.resample('4h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
 
-        f1s, f2s, f4s = check_formation(data, last_close), check_formation(df_2s, last_close), check_formation(df_4s, last_close)
+        f1s = check_formation(data, last_close)
+        f2s = check_formation(df_2s, last_close)
+        f4s = check_formation(df_4s, last_close)
         
+        hisse_adi = ticker.replace('.IS','')
         if (f1s and f2s and f4s):
-            all_results.append(f"🔥 *FULL KOMBO:* {ticker.replace('.IS','')}")
+            all_results.append(f"🔥 *FULL KOMBO:* {hisse_adi}")
         elif (sum([f1s, f2s, f4s]) >= 2):
-            all_results.append(f"⭐ *ÇİFT SİNYAL:* {ticker.replace('.IS','')}")
-    except: continue
+            all_results.append(f"⭐ *ÇİFT SİNYAL:* {hisse_adi}")
+    except:
+        continue
 
 if all_results:
-    msg = "🚨 *BIST RADAR RAPORU* 🚨\n\n" + "\n".join(all_results)
+    msg = f"🚨 *BIST RADAR RAPORU* 🚨\n({tarama_sayisi} hisse tarandı)\n\n" + "\n".join(all_results)
     send_telegram_msg(msg)
+else:
+    send_telegram_msg(f"✅ Tarama başarıyla bitti.\n📊 {tarama_sayisi} hisse kontrol edildi.\n🔍 Şu an kriterlere uyan sinyal yok.")
