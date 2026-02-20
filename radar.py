@@ -18,12 +18,26 @@ def send_telegram_msg(message):
     except Exception as e:
         print(f"Hata: {e}")
 
-# SENİN GÜNCEL DEV LİSTEN
+# --- 1. ŞİRKET LİSTESİ ---
 bist_raw = """
 ACSEL, ADEL, ADESE, ADLVY, ADGYO, AFYON, AGHOL, AGESA, AGROT, AHSGY, AHGAZ, AKSFA, AKFK, AKMEN, AKCVR, AKBNK, AKCKM, AKCNS, AKDFA, AKYHO, AKENR, AKFGY, AKFIS, AKFYE, ATEKS, AKSGY, AKMGY, AKSA, AKSEN, AKGRT, AKSUE, AKTVK, ALCAR, ALGYO, ALARK, ALBRK, ALCTL, ALFAS, ALKIM, ALKA, AYCES, ALTNY, ALKLC, ALVES, ANSGR, AEFES, ANHYT, ASUZU, ANGEN, ANELE, ARCLK, ARDYZ, ARENA, ARFYE, ARMGD, ARSAN, ARSVY, ARTMS, ARZUM, ASGYO, ASELS, ASTOR, ATAGY, ATAVK, ATAKP, AGYO, ATLFA, ATSYH, ATLAS, ATATP, AVOD, AVGYO, AVTUR, AVHOL, AVPGY, AYDEM, AYEN, AYES, AYGAZ, AZTEK, BAGFS, BAHKM, BAKAB, BALAT, BALSU, BNTAS, BANVT, BARMA, BSRFK, BASGZ, BASCM, BEGYO, BTCIM, BSOKE, BYDNR, BAYRK, BERA, BRKT, BRKSN, BESLR, BJKAS, BEYAZ, BIENY, BIGTK, BLCYT, BLKOM, BIMAS, BINBN, BIOEN, BRKVY, BRKO, BIGEN, BRLSM, BRMEN, BIZIM, BLUME, BMSTL, BMSCH, BOBET, BORSK, BORLS, BRSAN, BRYAT, BFREN, BOSSA, BRISA, BULGS, BURCE, BURVA, BUCIM, BVSAN, BIGCH, CRFSA, CASA, CEMZY, CEOEM, CCOLA, CONSE, COSMO, CRDFA, CVKMD, CWENE, CGCAM, CAGFA, CMSAN, CANTE, CATES, CLEBI, CELHA, CLKMT, CEMAS, CEMTS, CMBTN, CMENT, CIMSA, CUSAN, DAGI, DAPGM, DARDL, DGATE, DCTTR, DGRVK, DMSAS, DENGE, DZGYO, DERIM, DERHL, DESA, DESPC, DEVA, DNISI, DIRIT, DITAS, DKVRL, DMRGD, DOCO, DOFER, DOHOL, DTRND, DGNMO, DOGVY, ARASE, DOGUB, DGGYO, DOAS, DOKTA, DURDO, DURKN, DUNYH, DNYVA, DYOBY, EBEBK, ECOGR, ECZYT, EDATA, EDIP, EFOR, EGEEN, EGGUB, EGPRO, EGSER, EPLAS, EGEGY, ECILC, EKER, EKIZ, EKOFA, EKOS, EKOVR, EKSUN, ELITE, EMKEL, EMNIS, EMIRV, EKGYO, EMVAR, ENJSA, ENERY, ENKAI, ENSRI, ERBOS, ERCB, EREGL, KIMMR, ERSU, ESCAR, ESCOM, ESEN, ETILR, EUKYO, EUYO, ETYAT, EUHOL, TEZOL, EUREN, EUPWR, EYGYO, FADE, FAIRF, FMIZP, FENER, FLAP, FONET, FROTO, FORMT, FRMPL, FORTE, FRIGO, FZLGY, GWIND, GSRAY, GARFA, GARFL, GRNYO, SNKRN, GEDIK, GEDZA, GLCVY, GENIL, GENTS, GEREL, GZNMI, GIPTA, GMTAS, GESAN, GLYHO, GOODY, GOKNR, GOLTS, GOZDE, GRTHO, GSDDE, GSDHO, GUBRF, GLRYH, GLRMK, GUNDG, GRSEL, SAHOL, HALKF, HLGYO, HLVKS, HRKET, HATEK, HATSN, HDFFL, HDFGS, HEDEF, HEKTS, HKTM, HTTBT, HOROZ, HUBVC, HUNER, HUZFA, HURGZ, ENTRA, ICBCT, ICUGS, INGRM, INVEO, INVES, ISKPL, IEYHO, IDGYO, IHEVA, IHLGM, IHGZT, IHAAS, IHLAS, IHYAY, IMASM, INALR, INDES, INFO, INTEK, INTEM, ISDMR, ISFAK, ISFIN, ISGYO, ISGSY, ISMEN, ISYAT, ISBIR, ISSEN, IZINV, IZENR, IZMDC, IZFAS, JANTS, KFEIN, KLKIM, KLSER, KAPLM, KRDMA, KRDMB, KRDMD, KAREL, KARSN, KRTEK, KARTN, KTLEV, KATMR, KAYSE, KENT, KRVGD, KERVN, KZBGY, KLGYO, KLRHO, KMPUR, KLMSN, KCAER, KCHOL, KOCMT, KLSYN, KNFRT, KONTR, KONYA, KONKA, KGYO, KORDS, KRPLS, KORTS, KOTON, KOPOL, KRGYO, KRSTL, KRONT, KSTUR, KUVVA, KUYAS, KBORU, KZGYO, KUTPO, KTSKR, LIDER, LIDFA, LILAK, LMKDC, LINK, LOGO, LKMNH, LRSHO, LUKSK, LYDHO, LYDYE, MACKO, MAKIM, MAKTK, MANAS, MAGEN, MARKA, MAALT, MRSHL, MRGYO, MARTI, MTRKS, MAVI, MZHLD, MEDTR, MEGMT, MEGAP, MEKAG, MNDRS, MEPET, MERCN, MERIT, MERKO, METRO, MTRYO, MEYSU, MHRGY, MIATK, MGROS, MSGYO, MPARK, MMCAS, MOBTL, MOGAN, MNDTR, MOPAS, EGEPO, NATEN, NTGAZ, NTHOL, NETAS, NIBAS, NUHCM, NUGYO, OBAMS, OBASE, ODAS, ODINE, OFSYM, ONCSM, ONRYT, ORCAY, ORGE, ORMA, OSMEN, OSTIM, OTKAR, OTTO, OYAKC, OYAYO, OYLUM, OZKGY, OZATD, OZGYO, OZRDN, OZSUB, OZYSR, PAMEL, PNLSN, PAGYO, PAPIL, PRFFK, PRDGS, PRKME, PARSN, PASEU, PSGYO, PAHOL, PATEK, PCILT, PGSUS, PEKGY, PENGD, PENTA, PSDTC, PETKM, PKENT, PETUN, PINSU, PNSUT, PKART, PLTUR, POLHO, POLTK, PRZMA, QFINF, QUAGR, RNPOL, RALYH, RAYSG, REEDR, RYGYO, RYSAS, RODRG, ROYAL, RGYAS, RTALB, RUBNS, SAFKR, SANEL, SNICA, SANFM, SANKO, SAMAT, SARKY, SARTN, SASA, SAYAS, SDTTR, SEGMN, SEKUR, SELEC, SELVA, SERNT, SRVGY, SEYKM, SILVR, SNGYO, SMRTG, SMART, SODSN, SOKE, SKTAS, SONME, SNPAM, SUMAS, SUNTK, SURGY, SUWEN, SEKFK, SEGYO, SKBNK, SOKM, TABGD, TNZTP, TARKM, TATGD, TATEN, TAVHL, TEKTU, TKFEN, TKNSA, TMPOL, TRHOL, TGSAS, TOASO, TRGYO, TRMET, TLMAN, TSPOR, TDGYO, TSGYO, TUCLK, TUKAS, TRCAS, TUREX, MARBL, TRILC, TCELL, TRKNT, TMSN, TUPRS, THYAO, PRKAB, TTKOM, TTRAK, TBORG, TURGG, GARAN, HALKB, ISCTR, TSKB, TURSG, SISE, VAKBN, UFUK, ULAS, ULUFA, ULUSE, ULUUN, USAK, ULKER, UNLU, VAKFN, VKGYO, VKFYO, VAKKO, VANGD, VBTYZ, VRGYO, VERUS, VERTU, VESBE, VESTL, VKING, YKBNK, YAPRK, YATAS, YYLGD, YAYLA, YGGYO, YEOTK, YGYO, YYAPI, YESIL, YBTAS, YIGIT, YONGA, YKSLN, YUNSA, ZGYO, ZEDUR, ZRGYO, ZOREN, BINHO
 """
 
-selected_stocks = [k.strip() + ".IS" for k in bist_raw.split(",") if k.strip()]
+selected_stocks = [k.strip() + ".IS" for k in bist_raw.replace("\n", "").split(",") if k.strip()]
+
+# --- 2. FONKSİYONLAR ---
+def calculate_ars(src_series):
+    ema1 = src_series.ewm(span=3, adjust=False).mean()
+    band = 1.23 / 100
+    ars_values = np.zeros(len(ema1))
+    ars_values[0] = ema1.iloc[0]
+    for i in range(1, len(ema1)):
+        prev_out = ars_values[i-1]
+        curr_ema = ema1.iloc[i]
+        if (curr_ema * (1 - band)) > prev_out: ars_values[i] = curr_ema * (1 - band)
+        elif (curr_ema * (1 + band)) < prev_out: ars_values[i] = curr_ema * (1 + band)
+        else: ars_values[i] = prev_out
+    return pd.Series(ars_values, index=src_series.index)
 
 def calculate_t3_custom(src, length, vf, multiplier):
     def ema(s, l): return s.ewm(span=l, adjust=False).mean()
@@ -44,35 +58,49 @@ def check_formation(df_resampled, last_price):
     t_sari  = calculate_t3_custom(src, 37, 0.90, 4).iloc[-1]
     return (t_sari < t_siyah < t_mor and last_price > t_sari)
 
+# --- 3. TOPLU ANALİZ ---
 all_results = []
 tarama_sayisi = 0
 
-print(f"Tarama başlıyor: {len(selected_stocks)} hisse kontrol edilecek...")
-
 for ticker in selected_stocks:
     try:
-        data = yf.download(ticker, period="1y", interval="1h", progress=False)
-        if data.empty: continue
+        df_h = yf.download(ticker, period="2y", interval="1h", progress=False)
+        if len(df_h) < 200: continue
         
         tarama_sayisi += 1
-        last_close = float(data['Close'].iloc[-1])
-        df_2s = data.resample('2h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
-        df_4s = data.resample('4h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
-
-        f1s = check_formation(data, last_close)
-        f2s = check_formation(df_2s, last_close)
-        f4s = check_formation(df_4s, last_close)
+        last_close = df_h['Close'].iloc[-1]
         
-        hisse_adi = ticker.replace('.IS','')
-        if (f1s and f2s and f4s):
-            all_results.append(f"🔥 *FULL KOMBO:* {hisse_adi}")
-        elif (sum([f1s, f2s, f4s]) >= 2):
-            all_results.append(f"⭐ *ÇİFT SİNYAL:* {hisse_adi}")
-    except:
-        continue
+        df_2s = df_h.resample('2h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
+        df_4s = df_h.resample('4h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
+        df_d  = df_h.resample('D').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
+        df_w  = df_h.resample('W').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
+        df_m  = df_h.resample('ME').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
 
+        # ARS Skor (6 Kriter)
+        ars_vals = [
+            calculate_ars((df_2s['High']+df_2s['Low']+df_2s['Close'])/3).iloc[-1],
+            calculate_ars((df_4s['High']+df_4s['Low']+df_4s['Close'])/3).iloc[-1],
+            calculate_ars((df_d['High']+df_d['Low']+df_d['Close'])/3).iloc[-1],
+            calculate_ars((df_w['High']+df_w['Low']+df_w['Close'])/3).iloc[-1],
+            calculate_ars((df_m['High']+df_m['Low']+df_m['Close'])/3).iloc[-1],
+            df_d['Close'].rolling(window=200).mean().iloc[-1]
+        ]
+        skor = sum([last_close > v for v in ars_vals])
+
+        # MTF T3 Formasyon
+        f1s, f2s, f4s = check_formation(df_h, last_close), check_formation(df_2s, last_close), check_formation(df_4s, last_close)
+        
+        hisse_adi = ticker.replace(".IS","")
+        if (f1s and f2s and f4s):
+            all_results.append(f"🔥 *FULL KOMBO:* {hisse_adi} | Skor: {skor}/6 | Fiyat: {last_close:.2f}")
+        elif (sum([f1s, f2s, f4s]) >= 2):
+            all_results.append(f"⭐ *ÇİFT SİNYAL:* {hisse_adi} | Skor: {skor}/6 | Fiyat: {last_close:.2f}")
+
+    except: continue
+
+# --- 4. BİLDİRİM ---
 if all_results:
-    msg = f"🚨 *BIST RADAR RAPORU* 🚨\n({tarama_sayisi} hisse tarandı)\n\n" + "\n".join(all_results)
+    msg = f"🚨 *BIST RADAR ANALİZ RAPORU* 🚨\n({tarama_sayisi} hisse tarandı)\n\n" + "\n".join(all_results)
     send_telegram_msg(msg)
 else:
-    send_telegram_msg(f"✅ Tarama başarıyla bitti.\n📊 {tarama_sayisi} hisse kontrol edildi.\n🔍 Şu an kriterlere uyan sinyal yok.")
+    send_telegram_msg(f"✅ Tarama başarıyla bitti.\n📊 {tarama_sayisi} hisse kontrol edildi.\n🔍 Şu an kriterlere uyan (Kombo) sinyal yok.")
