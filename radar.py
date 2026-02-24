@@ -9,13 +9,33 @@ from concurrent.futures import ThreadPoolExecutor
 warnings.filterwarnings('ignore')
 
 # --- 1. AYARLAR ---
-TOKEN = os.getenv("TELEGRAM_TOKEN")
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+# GitHub Secrets'tan veya direkt tırnak içinde tanımlayabilirsin
+TOKEN = os.getenv("TELEGRAM_TOKEN") 
+CHAT_ID = "-1003749853988"  # Kanal ID'ni buraya direkt sabitledim reyis
+
+# BIST 50 Listesi (Etiketleme için)
+BIST50 = [
+    "AKBNK", "AKSEN", "ALARK", "ARCLK", "ASELS", "ASTOR", "BIMAS", "BRSAN", 
+    "DOAS", "DOHOL", "EKGYO", "ENJSA", "ENKAI", "EREGL", "FROTO", "GARAN", 
+    "GUBRF", "HALKB", "HEKTS", "ISCTR", "KCHOL", "KONTR", "KOZAA", "KOZAL", 
+    "KRDMD", "MGROS", "ODAS", "OYAKC", "PETKM", "PGSUS", "SAHOL", "SASA", 
+    "SISE", "SKBNK", "SOKM", "TAVHL", "TCELL", "THYAO", "TOASO", "TSKB", 
+    "TTKOM", "TTRAK", "TUPRS", "VAKBN", "VESTL", "YKBNK"
+]
 
 def send_telegram_msg(message):
     if not message.strip(): return
+    # Mesajın sonuna Yasal Uyarı ekliyoruz
+    disclaimer = "\n\n⚠️ *YASAL UYARI:*\n_Buradaki veriler indikatör bildirim sistemi olup yatırım tavsiyesi değildir._"
+    full_message = message + disclaimer
+    
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown", "disable_web_page_preview": True}
+    payload = {
+        "chat_id": CHAT_ID, 
+        "text": full_message, 
+        "parse_mode": "Markdown", 
+        "disable_web_page_preview": True
+    }
     try:
         requests.post(url, json=payload)
     except Exception as e:
@@ -32,35 +52,39 @@ def calculate_t3(src, length, vf, multiplier):
     return c1 * e6 + c2 * e5 + c3 * e4 + c4 * e3
 
 def check_formation(df_res, last_price):
-    if len(df_res) < 100: return False
+    if len(df_res) < 50: return False
     src = (df_res['High'] + df_res['Low'] + 2 * df_res['Close']) / 4
     t_siyah = calculate_t3(src, 50, 0.70, 3).iloc[-1]
     t_mor   = calculate_t3(src, 87, 0.90, 4).iloc[-1]
     t_sari  = calculate_t3(src, 37, 0.90, 4).iloc[-1]
+    # Formasyon: Sarı, Siyah ve Morun altında ama fiyat Sarının üstünde (Dönüş sinyali)
     return (t_sari < t_siyah < t_mor and last_price > t_sari)
 
 # --- 3. İŞLEME ---
 def process_ticker(ticker, data):
     try:
         df_h = data[ticker].dropna()
-        if len(df_h) < 200: return None
+        if len(df_h) < 100: return None
         last_close = df_h['Close'].iloc[-1]
         bb_mid = df_h['Close'].rolling(window=200).mean().iloc[-1]
         
+        # Resampling (2 saatlik ve 4 saatlik periyotlar)
         df_2s = df_h.resample('2h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
         df_4s = df_h.resample('4h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
 
-        f1s, f2s, f4s = check_formation(df_h, last_close), check_formation(df_2s, last_close), check_formation(df_4s, last_close)
+        f1s = check_formation(df_h, last_close)
+        f2s = check_formation(df_2s, last_close)
+        f4s = check_formation(df_4s, last_close)
         
         skor = sum([f1s, f2s, f4s])
         
-        # --- KRİTİK FİLTRE: Sadece 2 veya 3 sinyali olanları al ---
         if skor >= 2:
             t_name = ticker.replace(".IS","")
+            # BIST 50 Etiketi
+            label = " 🔥B50" if t_name in BIST50 else ""
             bb_emoji = "🟢" if last_close > bb_mid else "🔴"
-            link = f"[{t_name}](https://www.tradingview.com/chart/?symbol=BIST%3A{t_name})"
+            link = f"[{t_name}{label}](https://www.tradingview.com/chart/?symbol=BIST%3A{t_name})"
             
-            # Sinyal detaylarını emoji ile daha şık yapalım
             sinyaller = []
             if f1s: sinyaller.append("1S")
             if f2s: sinyaller.append("2S")
@@ -72,11 +96,11 @@ def process_ticker(ticker, data):
 
 # --- 4. ANA DÖNGÜ ---
 if __name__ == "__main__":
-    # Hisse listesi (Hepsini tarar ama sadece kaliteli olanları mesaj atar)
     bist_raw = "ACSEL, ADEL, ADESE, ADLVY, ADGYO, AFYON, AGHOL, AGESA, AGROT, AHSGY, AHGAZ, AKSFA, AKFK, AKMEN, AKCVR, AKBNK, AKCKM, AKCNS, AKDFA, AKYHO, AKENR, AKFGY, AKFIS, AKFYE, ATEKS, AKSGY, AKMGY, AKSA, AKSEN, AKGRT, AKSUE, AKTVK, ALCAR, ALGYO, ALARK, ALBRK, ALCTL, ALFAS, ALKIM, ALKA, AYCES, ALTNY, ALKLC, ALVES, ANSGR, AEFES, ANHYT, ASUZU, ANGEN, ANELE, ARCLK, ARDYZ, ARENA, ARFYE, ARMGD, ARSAN, ARSVY, ARTMS, ARZUM, ASGYO, ASELS, ASTOR, ATAGY, ATAVK, ATAKP, AGYO, ATLFA, ATSYH, ATLAS, ATATP, AVOD, AVGYO, AVTUR, AVHOL, AVPGY, AYDEM, AYEN, AYES, AYGAZ, AZTEK, BAGFS, BAHKM, BAKAB, BALAT, BALSU, BNTAS, BANVT, BARMA, BSRFK, BASGZ, BASCM, BEGYO, BTCIM, BSOKE, BYDNR, BAYRK, BERA, BRKT, BRKSN, BESLR, BJKAS, BEYAZ, BIENY, BIGTK, BLCYT, BLKOM, BIMAS, BINBN, BIOEN, BRKVY, BRKO, BIGEN, BRLSM, BRMEN, BIZIM, BLUME, BMSTL, BMSCH, BOBET, BORSK, BORLS, BRSAN, BRYAT, BFREN, BOSSA, BRISA, BULGS, BURCE, BURVA, BUCIM, BVSAN, BIGCH, CRFSA, CASA, CEMZY, CEOEM, CCOLA, CONSE, COSMO, CRDFA, CVKMD, CWENE, CGCAM, CAGFA, CMSAN, CANTE, CATES, CLEBI, CELHA, CLKMT, CEMAS, CEMTS, CMBTN, CMENT, CIMSA, CUSAN, DAGI, DAPGM, DARDL, DGATE, DCTTR, DGRVK, DMSAS, DENGE, DZGYO, DERIM, DERHL, DESA, DESPC, DEVA, DNISI, DIRIT, DITAS, DKVRL, DMRGD, DOCO, DOFER, DOHOL, DTRND, DGNMO, DOGVY, ARASE, DOGUB, DGGYO, DOAS, DOKTA, DURDO, DURKN, DUNYH, DNYVA, DYOBY, EBEBK, ECOGR, ECZYT, EDATA, EDIP, EFOR, EGEEN, EGGUB, EGPRO, EGSER, EPLAS, EGEGY, ECILC, EKER, EKIZ, EKOFA, EKOS, EKOVR, EKSUN, ELITE, EMKEL, EMNIS, EMIRV, EKGYO, EMVAR, ENJSA, ENERY, ENKAI, ENSRI, ERBOS, ERCB, EREGL, KIMMR, ERSU, ESCAR, ESCOM, ESEN, ETILR, EUKYO, EUYO, ETYAT, EUHOL, TEZOL, EUREN, EUPWR, EYGYO, FADE, FAIRF, FMIZP, FENER, FLAP, FONET, FROTO, FORMT, FRMPL, FORTE, FRIGO, FZLGY, GWIND, GSRAY, GARFA, GARFL, GRNYO, SNKRN, GEDIK, GEDZA, GLCVY, GENIL, GENTS, GEREL, GZNMI, GIPTA, GMTAS, GESAN, GLYHO, GOODY, GOKNR, GOLTS, GOZDE, GRTHO, GSDDE, GSDHO, GUBRF, GLRYH, GLRMK, GUNDG, GRSEL, SAHOL, HALKF, HLGYO, HLVKS, HRKET, HATEK, HATSN, HDFFL, HDFGS, HEDEF, HEKTS, HKTM, HTTBT, HOROZ, HUBVC, HUNER, HUZFA, HURGZ, ENTRA, ICBCT, ICUGS, INGRM, INVEO, INVES, ISKPL, IEYHO, IDGYO, IHEVA, IHLGM, IHGZT, IHAAS, IHLAS, IHYAY, IMASM, INALR, INDES, INFO, INTEK, INTEM, ISDMR, ISFAK, ISFIN, ISGYO, ISGSY, ISMEN, ISYAT, ISBIR, ISSEN, IZINV, IZENR, IZMDC, IZFAS, JANTS, KFEIN, KLKIM, KLSER, KAPLM, KRDMA, KRDMB, KRDMD, KAREL, KARSN, KRTEK, KARTN, KTLEV, KATMR, KAYSE, KENT, KRVGD, KERVN, KZBGY, KLGYO, KLRHO, KMPUR, KLMSN, KCAER, KCHOL, KOCMT, KLSYN, KNFRT, KONTR, KONYA, KONKA, KGYO, KORDS, KRPLS, KORTS, KOTON, KOPOL, KRGYO, KRSTL, KRONT, KSTUR, KUVVA, KUYAS, KBORU, KZGYO, KUTPO, KTSKR, LIDER, LIDFA, LILAK, LMKDC, LINK, LOGO, LKMNH, LRSHO, LUKSK, LYDHO, LYDYE, MACKO, MAKIM, MAKTK, MANAS, MAGEN, MARKA, MAALT, MRSHL, MRGYO, MARTI, MTRKS, MAVI, MZHLD, MEDTR, MEGMT, MEGAP, MEKAG, MNDRS, MEPET, MERCN, MERIT, MERKO, METRO, MTRYO, MEYSU, MHRGY, MIATK, MGROS, MSGYO, MPARK, MMCAS, MOBTL, MOGAN, MNDTR, MOPAS, EGEPO, NATEN, NTGAZ, NTHOL, NETAS, NIBAS, NUHCM, NUGYO, OBAMS, OBASE, ODAS, ODINE, OFSYM, ONCSM, ONRYT, ORCAY, ORGE, ORMA, OSMEN, OSTIM, OTKAR, OTTO, OYAKC, OYAYO, OYLUM, OZKGY, OZATD, OZGYO, OZRDN, OZSUB, OZYSR, PAMEL, PNLSN, PAGYO, PAPIL, PRFFK, PRDGS, PRKME, PARSN, PASEU, PSGYO, PAHOL, PATEK, PCILT, PGSUS, PEKGY, PENGD, PENTA, PSDTC, PETKM, PKENT, PETUN, PINSU, PNSUT, PKART, PLTUR, POLHO, POLTK, PRZMA, QFINF, QUAGR, RNPOL, RALYH, RAYSG, REEDR, RYGYO, RYSAS, RODRG, ROYAL, RGYAS, RTALB, RUBNS, SAFKR, SANEL, SNICA, SANFM, SANKO, SAMAT, SARKY, SARTN, SASA, SAYAS, SDTTR, SEGMN, SEKUR, SELEC, SELVA, SERNT, SRVGY, SEYKM, SILVR, SNGYO, SMRTG, SMART, SODSN, SOKE, SKTAS, SONME, SNPAM, SUMAS, SUNTK, SURGY, SUWEN, SEKFK, SEGYO, SKBNK, SOKM, TABGD, TNZTP, TARKM, TATGD, TATEN, TAVHL, TEKTU, TKFEN, TKNSA, TMPOL, TRHOL, TGSAS, TOASO, TRGYO, TRMET, TLMAN, TSPOR, TDGYO, TSGYO, TUCLK, TUKAS, TRCAS, TUREX, MARBL, TRILC, TCELL, TRKNT, TMSN, TUPRS, THYAO, PRKAB, TTKOM, TTRAK, TBORG, TURGG, GARAN, HALKB, ISCTR, TSKB, TURSG, SISE, VAKBN, UFUK, ULAS, ULUFA, ULUSE, ULUUN, USAK, ULKER, UNLU, VAKFN, VKGYO, VKFYO, VAKKO, VANGD, VBTYZ, VRGYO, VERUS, VERTU, VESBE, VESTL, VKING, YKBNK, YAPRK, YATAS, YYLGD, YAYLA, YGGYO, YEOTK, YGYO, YYAPI, YESIL, YBTAS, YIGIT, YONGA, YKSLN, YUNSA, ZGYO, ZEDUR, ZRGYO, ZOREN, BINHO"
     stocks = [k.strip() + ".IS" for k in bist_raw.split(",") if k.strip()]
     
     print("Turbo tarama başladı...")
+    # 60 günlük 1 saatlik veri indiriliyor
     data = yf.download(stocks, period="60d", interval="1h", group_by='ticker', progress=False)
 
     res_list = []
