@@ -3,8 +3,9 @@ import pandas as pd
 import requests
 
 # --- AYARLAR ---
-TOKEN = "BURAYA_BOT_TOKENINI_YAZ" # BotFather'dan aldığın token
+TOKEN = "BURAYA_BOT_TOKENINI_YAZ" # Kendi tokenini buraya yapıştır
 CHAT_ID = "-1003749853988" 
+
 BIST_LIST = "ACSEL, ADEL, ADESE, AGHOL, AGESA, AGROT, AKBNK, AKCNS, AKSA, AKSEN, ALARK, ALBRK, ALFAS, ARCLK, ASELS, ASTOR, BIMAS, BRSAN, CCOLA, DOAS, EREGL, FROTO, GARAN, HEKTS, ISCTR, KCHOL, KONTR, KOZAL, MGROS, PETKM, PGSUS, SAHOL, SASA, SISE, TCELL, THYAO, TOASO, TUPRS, VAKBN, YKBNK"
 stocks = [k.strip() + ".IS" for k in BIST_LIST.split(",") if k.strip()]
 
@@ -26,10 +27,13 @@ def check_signal(df):
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    requests.post(url, json={"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"})
+    try:
+        requests.post(url, json={"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML"})
+    except Exception as e:
+        print(f"Hata: {e}")
 
 # --- ANALİZ ---
-print("Tarama başlatıldı...")
+print("Tarama Başladı...")
 h_data = yf.download(stocks, period="60d", interval="1h", group_by='ticker', progress=False)
 results = []
 
@@ -43,7 +47,7 @@ for t in stocks:
 if results:
     msg = "🎯 <b>BIST RADAR SİNYAL</b>\n\n" + "\n".join([f"✅ {s}" for s in results])
 else:
-    msg = "🔔 Tarama yapıldı, kriterlere uyan yeni hisse bulunamadı."
+    msg = "🔔 Tarama yapıldı, şu an kriterlere uyan hisse bulunamadı."
 
 send_telegram(msg)
-print("Bitti.")
+print("İşlem Başarıyla Tamamlandı.")
