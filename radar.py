@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 warnings.filterwarnings('ignore')
 
-# --- 1. VIP KULLANICI LİSTESİ ---
+# --- 1. VIP KULLANICI VERİTABANI ---
 users_db = {
     "admin@mail.com": "bora2026",
     "vip01@bist.com": "vipy921", "vip02@bist.com": "vipy832", "vip03@bist.com": "vipy743",
@@ -23,22 +23,21 @@ users_db = {
 }
 
 # --- 2. AYARLAR ---
-st.set_page_config(page_title="VIP BIST RADAR", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="VIP BIST RADAR TERMINAL", page_icon="🎯", layout="wide")
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-# --- 3. FONKSİYONLAR ---
+# --- 3. HESAPLAMA MOTORU (Colab ile Birebir) ---
 def calculate_t3(src, length, vf, multiplier):
-    ema1 = ta.ema(src, length=length)
-    ema2 = ta.ema(ema1, length=length)
-    ema3 = ta.ema(ema2, length=length)
-    ema4 = ta.ema(ema3, length=length)
-    ema5 = ta.ema(ema4, length=length)
-    ema6 = ta.ema(ema5, length=length)
+    def ema(s, l): return s.ewm(span=l, adjust=False).mean()
+    e1 = ema(src, length); e2 = ema(e1, length); e3 = ema(e2, length)
+    e4 = ema(e3, length); e5 = ema(e4, length); e6 = ema(e5, length)
     vf3, vf2 = vf**3, vf**2
     if multiplier == 3:
         c1, c2, c3, c4 = -vf3, 3*vf2 + 3*vf3, -6*vf2 - 3*vf - 3*vf3, 1 + 3*vf + vf3 + 3*vf2
     else:
         c1, c2, c3, c4 = -vf3, 4*vf2 + 4*vf3, -8*vf2 - 4*vf - 4*vf3, 1 + 4*vf + vf3 + 4*vf2
-    return c1 * ema6 + c2 * ema5 + c3 * ema4 + c4 * ema3
+    return c1 * e6 + c2 * e5 + c3 * e4 + c4 * e3
 
 def check_formation(df, last_price):
     if len(df) < 100: return False
@@ -48,22 +47,39 @@ def check_formation(df, last_price):
     t_sari  = calculate_t3(src, 37, 0.90, 4).iloc[-1]
     return (t_sari < t_siyah < t_mor and last_price > t_sari)
 
-def process_ticker(ticker, h_df, d_df):
+def process_ticker(ticker, df_h, df_d):
     try:
-        last_close = h_df['Close'].iloc[-1]
-        daily_200_sma = d_df['Close'].rolling(window=200).mean().iloc[-1]
-        df_2s = h_df.resample('2h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
-        df_4s = h_df.resample('4h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
+        if df_h is None or df_h.empty or df_d is None or df_d.empty: return None
+        last_close = df_h['Close'].iloc[-1]
+        daily_200_sma = df_d['Close'].rolling(window=200).mean().iloc[-1]
+        
+        df_2s = df_h.resample('2h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
+        df_4s = df_h.resample('4h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
 
-        f1s = check_formation(h_df, last_close)
+        f1s = check_formation(df_h, last_close)
         f2s = check_formation(df_2s, last_close)
         f4s = check_formation(df_4s, last_close)
 
         if any([f1s, f2s, f4s]):
             score = sum([f1s, f2s, f4s])
             if score < 2 and last_close <= daily_200_sma: return None
+            
             status = "🔥 FULL KOMBO" if score == 3 else ("⭐ ÇİFT SİNYAL" if score == 2 else "TEK SİNYAL")
-            return {"Hisse": ticker.replace(".IS",""), "Fiyat": round(last_close, 2), "Sinyal": status, "4S": "✅" if f4s else "-", "2S": "✅" if f2s else "-", "1S": "✅" if f1s else "-", "Score": score}
+            t_name = ticker.replace(".IS","")
+            # TradingView Linki (Streamlit uyumlu)
+            tv_link = f"https://www.tradingview.com/chart/?symbol=BIST%3A{t_name}"
+            
+            return {
+                "Hisse": t_name,
+                "Link": tv_link,
+                "Kapanış": round(last_close, 2),
+                "KOMBO SİNYAL": status,
+                "Günlük 200 SMA": round(daily_200_sma, 2),
+                "4S (T3)": "POZİTİF" if f4s else "-",
+                "2S (T3)": "POZİTİF" if f2s else "-",
+                "1S (T3)": "POZİTİF" if f1s else "-",
+                "Weight": (score * 1000) + (int(f4s)*100) + (int(f2s)*10) + (int(f1s)*1)
+            }
     except: return None
 
 # --- 4. GİRİŞ KONTROLÜ ---
@@ -71,57 +87,70 @@ if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    st.title("🎯 VIP BIST RADAR")
-    with st.form("login_form"):
-        email = st.text_input("📧 E-Posta")
-        password = st.text_input("🔑 Şifre", type="password")
-        if st.form_submit_button("Sisteme Giriş Yap"):
-            if email in users_db and users_db[email] == password:
+    st.title("🛡️ BIST VIP RADAR LOGIN")
+    with st.form("login"):
+        user_mail = st.text_input("E-Posta")
+        user_pass = st.text_input("Şifre", type="password")
+        if st.form_submit_button("Giriş Yap"):
+            if user_mail in users_db and users_db[user_mail] == user_pass:
                 st.session_state.logged_in = True
                 st.rerun()
-            else: st.error("Hatalı bilgiler!")
+            else: st.error("Yetkisiz Giriş!")
 else:
-    # --- 5. ANA PANEL ---
-    st.sidebar.title(f"Hoş Geldin VIP")
-    if st.sidebar.button("🚪 Güvenli Çıkış"):
+    # --- 5. ANA EKRAN ---
+    st.sidebar.title(f"VIP PANEL")
+    if st.sidebar.button("Güvenli Çıkış"):
         st.session_state.logged_in = False
         st.rerun()
 
-    st.title("🚀 Tüm Borsa İstanbul (600+) VIP Tarama")
+    st.title("🎯 VIP BIST Radar (612 Hisse)")
     
-    if st.button("🔍 Tüm Hisseleri Analiz Et (Piyasa Taraması)"):
-        with st.spinner('Tüm piyasa verileri çekiliyor... Bu işlem 30-45 saniye sürebilir.'):
-            # TÜM BIST LİSTESİNİ ÇEKME (Sembol oluşturucu)
-            # Not: Yfinance ile tüm listeyi tek seferde çekmek için sembol listesini genişlettim.
-            all_stocks_url = "https://raw.githubusercontent.com/mercekmuhendislik-cloud/bist-radar/main/all_stocks.txt"
-            try:
-                # Kendi oluşturduğun veya genel bir listeden 600+ hisseyi buraya çekebilirsin
-                # Şimdilik manuel genişletilmiş liste (Hepsini tek tek yazmak yerine yfinance query de atılabilir)
-                stocks_list = ["ACSEL","ADEL","ADESE","AGHOL","AKBNK","AKSA","AKSEN","ALARK","ALBRK","ALCTL","ALGYO","ALKA","ALKIM","ANELE","ARCLK","ARENA","ARSAN","ASELS","AYGAZ","BAGFS","BAKAB","BANVT","BERA","BEYAZ","BIMAS","BIZIM","BMSCH","BNTAS","BOYP","BRISA","BRSAN","BRYAT","BSOKE","BUCIM","BURCE","BURVA","CANTE","CCOLA","CELHA","CEMAS","CEMTS","CIMSA","CLEBI","CONSE","CRDFA","DAGI","DARDL","DENGE","DERIM","DESA","DESPC","DEVA","DGATE","DGGYO","DITAS","DMSAS","DOAS","DOCO","DOGUB","DOHOL","DOKTA","DURDO","DYOBY","ECILC","ECZYT","EDATA","EGEEN","EGGUB","EGPRO","EGSER","EKGYO","EKIZ","ENJSA","ENKAI","ERBOS","EREGL","ERSU","ESCOM","ESEN","ETILR","EUREN","FLAP","FMIZP","FONET","FROTO","GARAN","GEDIK","GEDZA","GENTS","GEREL","GLBMD","GLRYH","GLYHO","GOZDE","GSDHO","GSDDE","GUHRE","GUBRF","GWIND","HALKB","HATEK","HDFGS","HEKTS","HLGYO","HTTBT","HUBVC","HUNER","IEYHO","IHEVA","IHGZT","IHLAS","IHLGM","IHMAD","INDES","INFO","INTEM","IPEKE","ISATR","ISBTR","ISCTR","ISFIN","ISGYO","ISMEN","ISSEN","ITTFH","IZFAS","IZMDC","JANTS","KAPLM","KAREL","KARSN","KARTN","KARYE","KATMR","KCHOL","KENT","KERVT","KFEIN","KGYO","KIMMR","KLGYO","KLMSN","KLRHO","KLSYN","KMPUR","KNFRT","KONTR","KORDS","KOZAA","KOZAL","KRDMA","KRDMB","KRDMD","KRONT","KRSTL","KRVGD","KSTUR","KUTPO","KUYAS","KZBGY","LIDER","LKMNH","LOGO","MAALT","MAGEN","MAKTK","MANAS","MARTI","MAVI","MEDTR","MEGAP","MEPET","METRO","METUR","MGROS","MIATK","MIPAZ","MMCAS","MNDRS","MOBTL","MPARK","MSGYO","MTRKS","MUDO","MZHLD","NETAS","NIBAS","NTGAZ","NTHOL","NUGYO","NUHCM","ODAS","ONCSM","ORCAY","ORGE","OTKAR","OYAKC","OYLUM","OYYAT","OZGYO","OZKGY","OZLGY","PAGYO","PAMEL","PAPIL","PARSN","PASEU","PENGD","PENTA","PETKM","PETUN","PGSUS","PINSU","PKART","PKENT","PNLSN","PNSUT","POLHO","POLTK","PRKAB","PRKME","PRZMA","PSDTC","QUAGR","RALYH","RAYSG","REEDR","RHEAG","RTALB","SAHOL","SAMAT","SANEL","SANFO","SANKO","SARKY","SASA","SAYAS","SEKFK","SEKUR","SELEC","SELVA","SEYKM","SILVR","SISE","SKBNK","SKTAS","SMRTGY","SNGYO","SNICA","SNKRT","SOKM","SONME","SRVGY","SUMAS","SUNTK","SURGY","SUWEN","TATGD","TAVHL","TCELL","TDGYO","TEKTU","TETMT","TGSAS","THYAO","TKFEN","TKNSA","TMPOL","TMSN","TOASO","TRCAS","TRGYO","TRILC","TSKB","TSPOR","TTKOM","TTRAK","TUCLK","TUKAS","TUPRS","TUREX","TURSG","UFUK","ULAS","ULUSE","ULUUN","UMPAS","USAK","VAKBN","VAKFN","VAKKO","VANGD","VERTU","VERUS","VESBE","VESTL","VKGYO","VKING","YAPRK","YATAS","YAYLA","YBTAS","YEOTK","YESIL","YGGYO","YGYO","YKBNK","YONGA","YUNSA","ZEDUR","ZRGYO"] # Örnek geniş liste, buraya istediğin kadar ekle
-                stocks = [s + ".IS" for s in stocks_list]
+    if st.button("🔍 TÜM PİYASAYI TARA (COLAB GÜCÜNDE)"):
+        with st.spinner('Tüm Borsa İstanbul verileri indiriliyor... (Yaklaşık 45 saniye)'):
+            bist_raw = "ACSEL, ADEL, ADESE, ADLVY, ADGYO, AFYON, AGHOL, AGESA, AGROT, AHSGY, AHGAZ, AKSFA, AKFK, AKMEN, AKCVR, AKBNK, AKCKM, AKCNS, AKDFA, AKYHO, AKENR, AKFGY, AKFIS, AKFYE, ATEKS, AKSGY, AKMGY, AKSA, AKSEN, AKGRT, AKSUE, AKTVK, ALCAR, ALGYO, ALARK, ALBRK, ALCTL, ALFAS, ALKIM, ALKA, AYCES, ALTNY, ALKLC, ALVES, ANSGR, AEFES, ANHYT, ASUZU, ANGEN, ANELE, ARCLK, ARDYZ, ARENA, ARFYE, ARMGD, ARSAN, ARSVY, ARTMS, ARZUM, ASGYO, ASELS, ASTOR, ATAGY, ATAVK, ATAKP, AGYO, ATLFA, ATSYH, ATLAS, ATATP, AVOD, AVGYO, AVTUR, AVHOL, AVPGY, AYDEM, AYEN, AYES, AYGAZ, AZTEK, BAGFS, BAHKM, BAKAB, BALAT, BALSU, BNTAS, BANVT, BARMA, BSRFK, BASGZ, BASCM, BEGYO, BTCIM, BSOKE, BYDNR, BAYRK, BERA, BRKT, BRKSN, BESLR, BJKAS, BEYAZ, BIENY, BIGTK, BLCYT, BLKOM, BIMAS, BINBN, BIOEN, BRKVY, BRKO, BIGEN, BRLSM, BRMEN, BIZIM, BLUME, BMSTL, BMSCH, BOBET, BORSK, BORLS, BRSAN, BRYAT, BFREN, BOSSA, BRISA, BULGS, BURCE, BURVA, BUCIM, BVSAN, BIGCH, CRFSA, CASA, CEMZY, CEOEM, CCOLA, CONSE, COSMO, CRDFA, CVKMD, CWENE, CGCAM, CAGFA, CMSAN, CANTE, CATES, CLEBI, CELHA, CLKMT, CEMAS, CEMTS, CMBTN, CMENT, CIMSA, CUSAN, DAGI, DAPGM, DARDL, DGATE, DCTTR, DGRVK, DMSAS, DENGE, DZGYO, DERIM, DERHL, DESA, DESPC, DEVA, DNISI, DIRIT, DITAS, DKVRL, DMRGD, DOCO, DOFER, DOHOL, DTRND, DGNMO, DOGVY, ARASE, DOGUB, DGGYO, DOAS, DOKTA, DURDO, DURKN, DUNYH, DNYVA, DYOBY, EBEBK, ECOGR, ECZYT, EDATA, EDIP, EFOR, EGEEN, EGGUB, EGPRO, EGSER, EPLAS, EGEGY, ECILC, EKER, EKIZ, EKOFA, EKOS, EKOVR, EKSUN, ELITE, EMKEL, EMNIS, EMIRV, EKGYO, EMVAR, ENJSA, ENERY, ENKAI, ENSRI, ERBOS, ERCB, EREGL, KIMMR, ERSU, ESCAR, ESCOM, ESEN, ETILR, EUKYO, EUYO, ETYAT, EUHOL, TEZOL, EUREN, EUPWR, EYGYO, FADE, FAIRF, FMIZP, FENER, FLAP, FONET, FROTO, FORMT, FRMPL, FORTE, FRIGO, FZLGY, GWIND, GSRAY, GARFA, GARFL, GRNYO, SNKRN, GEDIK, GEDZA, GLCVY, GENIL, GENTS, GEREL, GZNMI, GIPTA, GMTAS, GESAN, GLYHO, GOODY, GOKNR, GOLTS, GOZDE, GRTHO, GSDDE, GSDHO, GUBRF, GLRYH, GLRMK, GUNDG, GRSEL, SAHOL, HALKF, HLGYO, HLVKS, HRKET, HATEK, HATSN, HDFFL, HDFGS, HEDEF, HEKTS, HKTM, HTTBT, HOROZ, HUBVC, HUNER, HUZFA, HURGZ, ENTRA, ICBCT, ICUGS, INGRM, INVEO, INVES, ISKPL, IEYHO, IDGYO, IHEVA, IHLGM, IHGZT, IHAAS, IHLAS, IHYAY, IMASM, INALR, INDES, INFO, INTEK, INTEM, ISDMR, ISFAK, ISFIN, ISGYO, ISGSY, ISMEN, ISYAT, ISBIR, ISSEN, IZINV, IZENR, IZMDC, IZFAS, JANTS, KFEIN, KLKIM, KLSER, KAPLM, KRDMA, KRDMB, KRDMD, KAREL, KARSN, KRTEK, KARTN, KTLEV, KATMR, KAYSE, KENT, KRVGD, KERVN, KZBGY, KLGYO, KLRHO, KMPUR, KLMSN, KCAER, KCHOL, KOCMT, KLSYN, KNFRT, KONTR, KONYA, KONKA, KGYO, KORDS, KRPLS, KORTS, KOTON, KOPOL, KRGYO, KRSTL, KRONT, KSTUR, KUVVA, KUYAS, KBORU, KZGYO, KUTPO, KTSKR, LIDER, LIDFA, LILAK, LMKDC, LINK, LOGO, LKMNH, LRSHO, LUKSK, LYDHO, LYDYE, MACKO, MAKIM, MAKTK, MANAS, MAGEN, MARKA, MAALT, MRSHL, MRGYO, MARTI, MTRKS, MAVI, MZHLD, MEDTR, MEGMT, MEGAP, MEKAG, MNDRS, MEPET, MERCN, MERIT, MERKO, METRO, MTRYO, MEYSU, MHRGY, MIATK, MGROS, MSGYO, MPARK, MMCAS, MOBTL, MOGAN, MNDTR, MOPAS, EGEPO, NATEN, NTGAZ, NTHOL, NETAS, NIBAS, NUHCM, NUGYO, OBAMS, OBASE, ODAS, ODINE, OFSYM, ONCSM, ONRYT, ORCAY, ORGE, ORMA, OSMEN, OSTIM, OTKAR, OTTO, OYAKC, OYAYO, OYLUM, OZKGY, OZATD, OZGYO, OZRDN, OZSUB, OZYSR, PAMEL, PNLSN, PAGYO, PAPIL, PRFFK, PRDGS, PRKME, PARSN, PASEU, PSGYO, PAHOL, PATEK, PCILT, PGSUS, PEKGY, PENGD, PENTA, PSDTC, PETKM, PKENT, PETUN, PINSU, PNSUT, PKART, PLTUR, POLHO, POLTK, PRZMA, QFINF, QUAGR, RNPOL, RALYH, RAYSG, REEDR, RYGYO, RYSAS, RODRG, ROYAL, RGYAS, RTALB, RUBNS, SAFKR, SANEL, SNICA, SANFM, SANKO, SAMAT, SARKY, SARTN, SASA, SAYAS, SDTTR, SEGMN, SEKUR, SELEC, SELVA, SERNT, SRVGY, SEYKM, SILVR, SNGYO, SMRTG, SMART, SODSN, SOKE, SKTAS, SONME, SNPAM, SUMAS, SUNTK, SURGY, SUWEN, SEKFK, SEGYO, SKBNK, SOKM, TABGD, TNZTP, TARKM, TATGD, TATEN, TAVHL, TEKTU, TKFEN, TKNSA, TMPOL, TRHOL, TGSAS, TOASO, TRGYO, TRMET, TLMAN, TSPOR, TDGYO, TSGYO, TUCLK, TUKAS, TRCAS, TUREX, MARBL, TRILC, TCELL, TRKNT, TMSN, TUPRS, THYAO, PRKAB, TTKOM, TTRAK, TBORG, TURGG, GARAN, HALKB, ISCTR, TSKB, TURSG, SISE, VAKBN, UFUK, ULAS, ULUFA, ULUSE, ULUUN, USAK, ULKER, UNLU, VAKFN, VKGYO, VKFYO, VAKKO, VANGD, VBTYZ, VRGYO, VERUS, VERTU, VESBE, VESTL, VKING, YKBNK, YAPRK, YATAS, YYLGD, YAYLA, YGGYO, YEOTK, YGYO, YYAPI, YESIL, YBTAS, YIGIT, YONGA, YKSLN, YUNSA, ZGYO, ZEDUR, ZRGYO, ZOREN, BINHO"
+            stocks = [k.strip() + ".IS" for k in bist_raw.split(",") if k.strip()]
+            
+            h_data = yf.download(stocks, period="60d", interval="1h", group_by='ticker', progress=False)
+            d_data = yf.download(stocks, period="2y", interval="1d", group_by='ticker', progress=False)
+            
+            results = []
+            with ThreadPoolExecutor(max_workers=15) as executor:
+                futures = [executor.submit(process_ticker, t, h_data.get(t), d_data.get(t)) for t in stocks]
+                for f in as_completed(futures):
+                    res = f.result()
+                    if res: results.append(res)
+            
+            if results:
+                df_res = pd.DataFrame(results).sort_values(by="Weight", ascending=False).drop(columns=["Weight"])
                 
-                # Veri İndirme (Batch Mode)
-                h_data = yf.download(stocks, period="60d", interval="1h", group_by='ticker', progress=False)
-                d_data = yf.download(stocks, period="2y", interval="1d", group_by='ticker', progress=False)
-                
-                results = []
-                with ThreadPoolExecutor(max_workers=20) as executor:
-                    futures = [executor.submit(process_ticker, t, h_data[t], d_data[t]) for t in stocks if t in h_data and not h_data[t].empty]
-                    for f in as_completed(futures):
-                        res = f.result()
-                        if res: results.append(res)
-                
-                if results:
-                    df = pd.DataFrame(results).sort_values(by="Score", ascending=False).drop(columns=["Score"])
-                    st.subheader(f"📊 Tarama Sonuçları ({len(df)} Hisse)")
-                    
-                    def color_sinyal(val):
-                        if val == "🔥 FULL KOMBO": return 'background-color: #ff4b4b; color: white'
-                        if val == "⭐ ÇİFT SİNYAL": return 'background-color: #ffa500; color: black'
-                        return ''
+                # --- RENKLENDİRME FONKSİYONU (Colab Stili) ---
+                def style_table(row):
+                    styles = [''] * len(row)
+                    # Kombo Sinyal Renkleri
+                    if row['KOMBO SİNYAL'] == "🔥 FULL KOMBO": styles[3] = 'background-color: #FF4500; color: white; font-weight: bold'
+                    elif row['KOMBO SİNYAL'] == "⭐ ÇİFT SİNYAL": styles[3] = 'background-color: #FFD700; color: black; font-weight: bold'
+                    # SMA 200 Renkleri
+                    if row['Kapanış'] > row['Günlük 200 SMA']: styles[4] = 'background-color: #C6EFCE; color: #006100'
+                    else: styles[4] = 'background-color: #FFC7CE; color: #9C0006'
+                    # T3 Pozitif Renkleri
+                    for i in [5, 6, 7]:
+                        if row.iloc[i] == "POZİTİF": styles[i] = 'background-color: #00008B; color: white; font-weight: bold'
+                    return styles
 
-                    st.dataframe(df.style.applymap(color_sinyal, subset=['Sinyal']), use_container_width=True)
-                else:
-                    st.warning("Kriterlere uygun hisse bulunamadı.")
-            except Exception as e:
-                st.error(f"Bir hata oluştu: {e}")
+                # Link Kolonunu Tıklanabilir Yap
+                st.write("### 🎯 Tarama Sonuçları")
+                st.dataframe(
+                    df_res.style.apply(style_table, axis=1),
+                    column_config={
+                        "Link": st.column_config.LinkColumn("Grafik", display_text="Grafiği Aç")
+                    },
+                    use_container_width=True,
+                    height=600
+                )
+                
+                # Telegram Bildirimi (Opsiyonel)
+                if TOKEN and CHAT_ID:
+                    requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage", 
+                                  json={"chat_id": CHAT_ID, "text": f"✅ VIP Web Tarama Tamamlandı! {len(results)} sinyal bulundu."})
+            else:
+                st.warning("❌ Kriterlere uyan hisse bulunamadı.")
