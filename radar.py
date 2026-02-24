@@ -10,23 +10,39 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 warnings.filterwarnings('ignore')
 
-# --- 1. AYARLAR (Telegram & Sayfa) ---
+# --- 1. VIP KULLANICI LİSTESİ (Mail: Şifre) ---
+# Burayı istediğin zaman GitHub üzerinden düzenleyip kişi ekleyebilirsin.
+users_db = {
+    "admin@mail.com": "bora2026", # Senin ana girişin
+    "vip01@bist.com": "vipy921",
+    "vip02@bist.com": "vipy832",
+    "vip03@bist.com": "vipy743",
+    "vip04@bist.com": "vipy654",
+    "vip05@bist.com": "vipy565",
+    "vip06@bist.com": "vipy476",
+    "vip07@bist.com": "vipy387",
+    "vip08@bist.com": "vipy298",
+    "vip09@bist.com": "vipy109",
+    "vip10@bist.com": "gold2026",
+    "vip11@bist.com": "gold2027",
+    "user12@mail.com": "user9911",
+    "user13@mail.com": "user9912",
+    "user14@mail.com": "user9913",
+    "user15@mail.com": "user9914",
+    "user16@mail.com": "user9915",
+    "user17@mail.com": "user9916",
+    "user18@mail.com": "user9917",
+    "user19@mail.com": "user9918",
+    "user20@mail.com": "user9919"
+}
+
+# --- 2. AYARLAR & KONFİGÜRASYON ---
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-st.set_page_config(page_title="VIP BIST RADAR", layout="wide")
+st.set_page_config(page_title="VIP BIST RADAR", page_icon="🎯", layout="wide")
 
-# --- 2. KULLANICI LİSTESİ ---
-users_db = {"admin@mail.com": "12345", "bora@mail.com": "bora2026"}
-
-# --- 3. FONKSİYONLAR ---
-def send_telegram_msg(message):
-    if not TOKEN or not CHAT_ID: return # Token yoksa hata verme, geç
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "Markdown"}
-    try: requests.post(url, json=payload)
-    except: pass
-
+# --- 3. TEKNİK FONKSİYONLAR ---
 def calculate_t3(src, length, vf, multiplier):
     ema1 = ta.ema(src, length=length)
     ema2 = ta.ema(ema1, length=length)
@@ -53,6 +69,7 @@ def process_ticker(ticker, h_df, d_df):
     try:
         last_close = h_df['Close'].iloc[-1]
         daily_200_sma = d_df['Close'].rolling(window=200).mean().iloc[-1]
+        
         df_2s = h_df.resample('2h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
         df_4s = h_df.resample('4h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
 
@@ -63,28 +80,50 @@ def process_ticker(ticker, h_df, d_df):
         if any([f1s, f2s, f4s]):
             score = sum([f1s, f2s, f4s])
             if score < 2 and last_close <= daily_200_sma: return None
-            status = "🔥 FULL" if score == 3 else "⭐ ÇİFT" if score == 2 else "TEK"
-            return {"Hisse": ticker.replace(".IS",""), "Fiyat": round(last_close, 2), "Sinyal": status, "4S": f4s, "2S": f2s, "1S": f1s}
+            status = "🔥 FULL KOMBO" if score == 3 else ("⭐ ÇİFT SİNYAL" if score == 2 else "TEK SİNYAL")
+            return {
+                "Hisse": ticker.replace(".IS",""),
+                "Fiyat": round(last_close, 2),
+                "Sinyal": status,
+                "4S": "✅" if f4s else "-",
+                "2S": "✅" if f2s else "-",
+                "1S": "✅" if f1s else "-"
+            }
     except: return None
 
 # --- 4. STREAMLIT ARAYÜZÜ ---
-st.title("🎯 VIP BIST RADAR")
-
-if 'logged_in' not in st.session_state: st.session_state.logged_in = False
+if 'logged_in' not in st.session_state:
+    st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    email = st.text_input("E-Posta")
-    password = st.text_input("Şifre", type="password")
-    if st.button("Giriş Yap"):
-        if email in users_db and users_db[email] == password:
-            st.session_state.logged_in = True
-            st.rerun()
-        else: st.error("Hatalı!")
+    # GİRİŞ EKRANI
+    st.title("🎯 VIP BIST RADAR")
+    with st.container():
+        email_input = st.text_input("📧 E-Posta")
+        pass_input = st.text_input("🔑 Şifre", type="password")
+        if st.button("Giriş Yap"):
+            if email_input in users_db and users_db[email_input] == pass_input:
+                st.session_state.logged_in = True
+                st.rerun()
+            else:
+                st.error("E-posta veya şifre hatalı!")
 else:
-    if st.button("🚀 TARAMAYI BAŞLAT"):
-        with st.spinner('Veriler çekiliyor...'):
+    # ANA PANEL
+    st.sidebar.title("Menü")
+    if st.sidebar.button("Güvenli Çıkış"):
+        st.session_state.logged_in = False
+        st.rerun()
+
+    st.title("🚀 BIST VIP Teknik Tarama")
+    st.info("Skor 2-3 veya SMA 200 üstü kırılımlar listelenir.")
+
+    if st.button("🔍 Analizi Başlat / Yenile"):
+        with st.spinner('Veriler analiz ediliyor, lütfen bekleyin...'):
+            # BIST Sembol Listesi
             bist_raw = "ACSEL, ADEL, ADESE, AGHOL, AKBNK, AKSA, AKSEN, ALARK, ARCLK, ASELS, ASTOR, BIMAS, BRSAN, DOAS, DOHOL, EKGYO, ENJSA, ENKAI, EREGL, FROTO, GARAN, GUBRF, HALKB, HEKTS, ISCTR, KCHOL, KONTR, KOZAA, KOZAL, KRDMD, MGROS, ODAS, OYAKC, PETKM, PGSUS, SAHOL, SASA, SISE, SKBNK, SOKM, TAVHL, TCELL, THYAO, TOASO, TSKB, TTKOM, TTRAK, TUPRS, VAKBN, VESTL, YKBNK"
             stocks = [s.strip() + ".IS" for s in bist_raw.split(",")]
+            
+            # Veri İndirme
             h_data = yf.download(stocks, period="60d", interval="1h", group_by='ticker', progress=False)
             d_data = yf.download(stocks, period="2y", interval="1d", group_by='ticker', progress=False)
             
@@ -92,11 +131,18 @@ else:
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [executor.submit(process_ticker, t, h_data[t], d_data[t]) for t in stocks if t in h_data]
                 for f in as_completed(futures):
-                    res = f.result(); 
+                    res = f.result()
                     if res: results.append(res)
             
             if results:
-                df = pd.DataFrame(results)
-                st.table(df)
-                send_telegram_msg(f"✅ VIP Tarama Tamamlandı! {len(results)} sinyal bulundu.")
-            else: st.warning("Sinyal yok.")
+                df_final = pd.DataFrame(results)
+                
+                # Tablo Görselleştirme
+                def style_sinyal(val):
+                    color = '#ff4b4b' if val == "🔥 FULL KOMBO" else ('#ffa500' if val == "⭐ ÇİFT SİNYAL" else '')
+                    return f'background-color: {color}'
+
+                st.dataframe(df_final.style.applymap(style_sinyal, subset=['Sinyal']), use_container_width=True)
+                st.success(f"Tarama tamamlandı. {len(results)} potansiyel fırsat bulundu.")
+            else:
+                st.warning("Şu an kriterlere uygun hisse bulunamadı.")
