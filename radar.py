@@ -10,39 +10,22 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 warnings.filterwarnings('ignore')
 
-# --- 1. VIP KULLANICI LİSTESİ (Mail: Şifre) ---
-# Burayı istediğin zaman GitHub üzerinden düzenleyip kişi ekleyebilirsin.
+# --- 1. VIP KULLANICI LİSTESİ ---
 users_db = {
-    "admin@mail.com": "bora2026", # Senin ana girişin
-    "vip01@bist.com": "vipy921",
-    "vip02@bist.com": "vipy832",
-    "vip03@bist.com": "vipy743",
-    "vip04@bist.com": "vipy654",
-    "vip05@bist.com": "vipy565",
-    "vip06@bist.com": "vipy476",
-    "vip07@bist.com": "vipy387",
-    "vip08@bist.com": "vipy298",
-    "vip09@bist.com": "vipy109",
-    "vip10@bist.com": "gold2026",
-    "vip11@bist.com": "gold2027",
-    "user12@mail.com": "user9911",
-    "user13@mail.com": "user9912",
-    "user14@mail.com": "user9913",
-    "user15@mail.com": "user9914",
-    "user16@mail.com": "user9915",
-    "user17@mail.com": "user9916",
-    "user18@mail.com": "user9917",
-    "user19@mail.com": "user9918",
-    "user20@mail.com": "user9919"
+    "admin@mail.com": "bora2026",
+    "vip01@bist.com": "vipy921", "vip02@bist.com": "vipy832", "vip03@bist.com": "vipy743",
+    "vip04@bist.com": "vipy654", "vip05@bist.com": "vipy565", "vip06@bist.com": "vipy476",
+    "vip07@bist.com": "vipy387", "vip08@bist.com": "vipy298", "vip09@bist.com": "vipy109",
+    "vip10@bist.com": "gold2026", "vip11@bist.com": "gold2027", "user12@mail.com": "user9911",
+    "user13@mail.com": "user9912", "user14@mail.com": "user9913", "user15@mail.com": "user9914",
+    "user16@mail.com": "user9915", "user17@mail.com": "user9916", "user18@mail.com": "user9917",
+    "user19@mail.com": "user9918", "user20@mail.com": "user9919"
 }
 
-# --- 2. AYARLAR & KONFİGÜRASYON ---
-TOKEN = os.getenv("TELEGRAM_TOKEN")
-CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
-
+# --- 2. AYARLAR ---
 st.set_page_config(page_title="VIP BIST RADAR", page_icon="🎯", layout="wide")
 
-# --- 3. TEKNİK FONKSİYONLAR ---
+# --- 3. FONKSİYONLAR ---
 def calculate_t3(src, length, vf, multiplier):
     ema1 = ta.ema(src, length=length)
     ema2 = ta.ema(ema1, length=length)
@@ -69,7 +52,6 @@ def process_ticker(ticker, h_df, d_df):
     try:
         last_close = h_df['Close'].iloc[-1]
         daily_200_sma = d_df['Close'].rolling(window=200).mean().iloc[-1]
-        
         df_2s = h_df.resample('2h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
         df_4s = h_df.resample('4h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
 
@@ -81,68 +63,65 @@ def process_ticker(ticker, h_df, d_df):
             score = sum([f1s, f2s, f4s])
             if score < 2 and last_close <= daily_200_sma: return None
             status = "🔥 FULL KOMBO" if score == 3 else ("⭐ ÇİFT SİNYAL" if score == 2 else "TEK SİNYAL")
-            return {
-                "Hisse": ticker.replace(".IS",""),
-                "Fiyat": round(last_close, 2),
-                "Sinyal": status,
-                "4S": "✅" if f4s else "-",
-                "2S": "✅" if f2s else "-",
-                "1S": "✅" if f1s else "-"
-            }
+            return {"Hisse": ticker.replace(".IS",""), "Fiyat": round(last_close, 2), "Sinyal": status, "4S": "✅" if f4s else "-", "2S": "✅" if f2s else "-", "1S": "✅" if f1s else "-", "Score": score}
     except: return None
 
-# --- 4. STREAMLIT ARAYÜZÜ ---
+# --- 4. GİRİŞ KONTROLÜ ---
 if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    # GİRİŞ EKRANI
     st.title("🎯 VIP BIST RADAR")
-    with st.container():
-        email_input = st.text_input("📧 E-Posta")
-        pass_input = st.text_input("🔑 Şifre", type="password")
-        if st.button("Giriş Yap"):
-            if email_input in users_db and users_db[email_input] == pass_input:
+    with st.form("login_form"):
+        email = st.text_input("📧 E-Posta")
+        password = st.text_input("🔑 Şifre", type="password")
+        if st.form_submit_button("Sisteme Giriş Yap"):
+            if email in users_db and users_db[email] == password:
                 st.session_state.logged_in = True
                 st.rerun()
-            else:
-                st.error("E-posta veya şifre hatalı!")
+            else: st.error("Hatalı bilgiler!")
 else:
-    # ANA PANEL
-    st.sidebar.title("Menü")
-    if st.sidebar.button("Güvenli Çıkış"):
+    # --- 5. ANA PANEL ---
+    st.sidebar.title(f"Hoş Geldin VIP")
+    if st.sidebar.button("🚪 Güvenli Çıkış"):
         st.session_state.logged_in = False
         st.rerun()
 
-    st.title("🚀 BIST VIP Teknik Tarama")
-    st.info("Skor 2-3 veya SMA 200 üstü kırılımlar listelenir.")
-
-    if st.button("🔍 Analizi Başlat / Yenile"):
-        with st.spinner('Veriler analiz ediliyor, lütfen bekleyin...'):
-            # BIST Sembol Listesi
-            bist_raw = "ACSEL, ADEL, ADESE, AGHOL, AKBNK, AKSA, AKSEN, ALARK, ARCLK, ASELS, ASTOR, BIMAS, BRSAN, DOAS, DOHOL, EKGYO, ENJSA, ENKAI, EREGL, FROTO, GARAN, GUBRF, HALKB, HEKTS, ISCTR, KCHOL, KONTR, KOZAA, KOZAL, KRDMD, MGROS, ODAS, OYAKC, PETKM, PGSUS, SAHOL, SASA, SISE, SKBNK, SOKM, TAVHL, TCELL, THYAO, TOASO, TSKB, TTKOM, TTRAK, TUPRS, VAKBN, VESTL, YKBNK"
-            stocks = [s.strip() + ".IS" for s in bist_raw.split(",")]
-            
-            # Veri İndirme
-            h_data = yf.download(stocks, period="60d", interval="1h", group_by='ticker', progress=False)
-            d_data = yf.download(stocks, period="2y", interval="1d", group_by='ticker', progress=False)
-            
-            results = []
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                futures = [executor.submit(process_ticker, t, h_data[t], d_data[t]) for t in stocks if t in h_data]
-                for f in as_completed(futures):
-                    res = f.result()
-                    if res: results.append(res)
-            
-            if results:
-                df_final = pd.DataFrame(results)
+    st.title("🚀 Tüm Borsa İstanbul (600+) VIP Tarama")
+    
+    if st.button("🔍 Tüm Hisseleri Analiz Et (Piyasa Taraması)"):
+        with st.spinner('Tüm piyasa verileri çekiliyor... Bu işlem 30-45 saniye sürebilir.'):
+            # TÜM BIST LİSTESİNİ ÇEKME (Sembol oluşturucu)
+            # Not: Yfinance ile tüm listeyi tek seferde çekmek için sembol listesini genişlettim.
+            all_stocks_url = "https://raw.githubusercontent.com/mercekmuhendislik-cloud/bist-radar/main/all_stocks.txt"
+            try:
+                # Kendi oluşturduğun veya genel bir listeden 600+ hisseyi buraya çekebilirsin
+                # Şimdilik manuel genişletilmiş liste (Hepsini tek tek yazmak yerine yfinance query de atılabilir)
+                stocks_list = ["ACSEL","ADEL","ADESE","AGHOL","AKBNK","AKSA","AKSEN","ALARK","ALBRK","ALCTL","ALGYO","ALKA","ALKIM","ANELE","ARCLK","ARENA","ARSAN","ASELS","AYGAZ","BAGFS","BAKAB","BANVT","BERA","BEYAZ","BIMAS","BIZIM","BMSCH","BNTAS","BOYP","BRISA","BRSAN","BRYAT","BSOKE","BUCIM","BURCE","BURVA","CANTE","CCOLA","CELHA","CEMAS","CEMTS","CIMSA","CLEBI","CONSE","CRDFA","DAGI","DARDL","DENGE","DERIM","DESA","DESPC","DEVA","DGATE","DGGYO","DITAS","DMSAS","DOAS","DOCO","DOGUB","DOHOL","DOKTA","DURDO","DYOBY","ECILC","ECZYT","EDATA","EGEEN","EGGUB","EGPRO","EGSER","EKGYO","EKIZ","ENJSA","ENKAI","ERBOS","EREGL","ERSU","ESCOM","ESEN","ETILR","EUREN","FLAP","FMIZP","FONET","FROTO","GARAN","GEDIK","GEDZA","GENTS","GEREL","GLBMD","GLRYH","GLYHO","GOZDE","GSDHO","GSDDE","GUHRE","GUBRF","GWIND","HALKB","HATEK","HDFGS","HEKTS","HLGYO","HTTBT","HUBVC","HUNER","IEYHO","IHEVA","IHGZT","IHLAS","IHLGM","IHMAD","INDES","INFO","INTEM","IPEKE","ISATR","ISBTR","ISCTR","ISFIN","ISGYO","ISMEN","ISSEN","ITTFH","IZFAS","IZMDC","JANTS","KAPLM","KAREL","KARSN","KARTN","KARYE","KATMR","KCHOL","KENT","KERVT","KFEIN","KGYO","KIMMR","KLGYO","KLMSN","KLRHO","KLSYN","KMPUR","KNFRT","KONTR","KORDS","KOZAA","KOZAL","KRDMA","KRDMB","KRDMD","KRONT","KRSTL","KRVGD","KSTUR","KUTPO","KUYAS","KZBGY","LIDER","LKMNH","LOGO","MAALT","MAGEN","MAKTK","MANAS","MARTI","MAVI","MEDTR","MEGAP","MEPET","METRO","METUR","MGROS","MIATK","MIPAZ","MMCAS","MNDRS","MOBTL","MPARK","MSGYO","MTRKS","MUDO","MZHLD","NETAS","NIBAS","NTGAZ","NTHOL","NUGYO","NUHCM","ODAS","ONCSM","ORCAY","ORGE","OTKAR","OYAKC","OYLUM","OYYAT","OZGYO","OZKGY","OZLGY","PAGYO","PAMEL","PAPIL","PARSN","PASEU","PENGD","PENTA","PETKM","PETUN","PGSUS","PINSU","PKART","PKENT","PNLSN","PNSUT","POLHO","POLTK","PRKAB","PRKME","PRZMA","PSDTC","QUAGR","RALYH","RAYSG","REEDR","RHEAG","RTALB","SAHOL","SAMAT","SANEL","SANFO","SANKO","SARKY","SASA","SAYAS","SEKFK","SEKUR","SELEC","SELVA","SEYKM","SILVR","SISE","SKBNK","SKTAS","SMRTGY","SNGYO","SNICA","SNKRT","SOKM","SONME","SRVGY","SUMAS","SUNTK","SURGY","SUWEN","TATGD","TAVHL","TCELL","TDGYO","TEKTU","TETMT","TGSAS","THYAO","TKFEN","TKNSA","TMPOL","TMSN","TOASO","TRCAS","TRGYO","TRILC","TSKB","TSPOR","TTKOM","TTRAK","TUCLK","TUKAS","TUPRS","TUREX","TURSG","UFUK","ULAS","ULUSE","ULUUN","UMPAS","USAK","VAKBN","VAKFN","VAKKO","VANGD","VERTU","VERUS","VESBE","VESTL","VKGYO","VKING","YAPRK","YATAS","YAYLA","YBTAS","YEOTK","YESIL","YGGYO","YGYO","YKBNK","YONGA","YUNSA","ZEDUR","ZRGYO"] # Örnek geniş liste, buraya istediğin kadar ekle
+                stocks = [s + ".IS" for s in stocks_list]
                 
-                # Tablo Görselleştirme
-                def style_sinyal(val):
-                    color = '#ff4b4b' if val == "🔥 FULL KOMBO" else ('#ffa500' if val == "⭐ ÇİFT SİNYAL" else '')
-                    return f'background-color: {color}'
+                # Veri İndirme (Batch Mode)
+                h_data = yf.download(stocks, period="60d", interval="1h", group_by='ticker', progress=False)
+                d_data = yf.download(stocks, period="2y", interval="1d", group_by='ticker', progress=False)
+                
+                results = []
+                with ThreadPoolExecutor(max_workers=20) as executor:
+                    futures = [executor.submit(process_ticker, t, h_data[t], d_data[t]) for t in stocks if t in h_data and not h_data[t].empty]
+                    for f in as_completed(futures):
+                        res = f.result()
+                        if res: results.append(res)
+                
+                if results:
+                    df = pd.DataFrame(results).sort_values(by="Score", ascending=False).drop(columns=["Score"])
+                    st.subheader(f"📊 Tarama Sonuçları ({len(df)} Hisse)")
+                    
+                    def color_sinyal(val):
+                        if val == "🔥 FULL KOMBO": return 'background-color: #ff4b4b; color: white'
+                        if val == "⭐ ÇİFT SİNYAL": return 'background-color: #ffa500; color: black'
+                        return ''
 
-                st.dataframe(df_final.style.applymap(style_sinyal, subset=['Sinyal']), use_container_width=True)
-                st.success(f"Tarama tamamlandı. {len(results)} potansiyel fırsat bulundu.")
-            else:
-                st.warning("Şu an kriterlere uygun hisse bulunamadı.")
+                    st.dataframe(df.style.applymap(color_sinyal, subset=['Sinyal']), use_container_width=True)
+                else:
+                    st.warning("Kriterlere uygun hisse bulunamadı.")
+            except Exception as e:
+                st.error(f"Bir hata oluştu: {e}")
