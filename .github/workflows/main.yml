@@ -2,8 +2,11 @@ name: BIST Radar Bot
 
 on:
   schedule:
-    - cron: '15 7,15 * * 1-5' # Hafta içi her gün çalışır
-  workflow_dispatch: # Manuel çalıştırma butonu sağlar
+    # GitHub UTC zaman dilimini kullanır. 
+    # Türkiye (UTC+3) 10:00 - 18:00 arası için UTC 07:00 - 15:00 ayarlanmıştır.
+    # Hafta içi (1-5) her saat 15. dakikada çalışır.
+    - cron: '15 7,8,9,10,11,12,13,14,15 * * 1-5'
+  workflow_dispatch: # İstediğinde manuel çalıştırman için buton bırakır
 
 jobs:
   build:
@@ -19,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install yfinance requests pandas
+          pip install yfinance requests pandas numpy
 
       - name: Run bot
         env:
