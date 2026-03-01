@@ -4,11 +4,12 @@ import numpy as np
 import warnings
 import requests
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 warnings.filterwarnings('ignore')
 
-# --- AYARLAR (GitHub Secrets) ---
+# --- AYARLAR ---
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -16,12 +17,16 @@ def send_telegram_msg(message):
     if not TOKEN or not CHAT_ID: return
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": message, "parse_mode": "HTML", "disable_web_page_preview": True}
-    requests.post(url, json=payload)
+    try:
+        requests.post(url, json=payload, timeout=10)
+    except:
+        pass
 
-# --- ŞİRKET LİSTESİ ---
-bist_raw = "ACSEL, ADEL, ADESE, AGHOL, AGESA, AGROT, AKBNK, AKCNS, AKSA, AKSEN, ALARK, ALBRK, ALFAS, ARCLK, ARDYZ, ASELS, ASTOR, BIMAS, BRISA, CANTE, CCOLA, CWENE, DOAS, DOHOL, EGEEN, EKGYO, ENJSA, ENKAI, EREGL, FROTO, GARAN, GUBRF, HALKB, HEKTS, ISCTR, KCHOL, KONTR, KOZAA, KOZAL, KRDMD, MAVI, MGROS, MIATK, ODAS, OTKAR, OYAKC, PGSUS, PETKM, SAHOL, SASA, SISE, SKBNK, SOKM, TAVHL, TCELL, THYAO, TKFEN, TOASO, TSKB, TTKOM, TTRAK, TUPRS, VAKBN, VESBE, VESTL, YKBNK, PRZMA, AKSUE, SONME, USAK, SANFM, EYGYO, ESCAR, TDGYO, DERHL, GENTS, SELVA"
+# --- TÜM HİSSE LİSTESİ ---
+bist_raw = "ACSEL, ADEL, ADESE, ADLVY, ADGYO, AFYON, AGHOL, AGESA, AGROT, AHSGY, AHGAZ, AKSFA, AKFK, AKMEN, AKCVR, AKBNK, AKCKM, AKCNS, AKDFA, AKYHO, AKENR, AKFGY, AKFIS, AKFYE, ATEKS, AKSGY, AKMGY, AKSA, AKSEN, AKGRT, AKSUE, AKTVK, ALCAR, ALGYO, ALARK, ALBRK, ALCTL, ALFAS, ALKIM, ALKA, AYCES, ALTNY, ALKLC, ALVES, ANSGR, AEFES, ANHYT, ASUZU, ANGEN, ANELE, ARCLK, ARDYZ, ARENA, ARFYE, ARMGD, ARSAN, ARSVY, ARTMS, ARZUM, ASGYO, ASELS, ASTOR, ATAGY, ATAVK, ATAKP, AGYO, ATLFA, ATSYH, ATLAS, ATATP, AVOD, AVGYO, AVTUR, AVHOL, AVPGY, AYDEM, AYEN, AYES, AYGAZ, AZTEK, BAGFS, BAHKM, BAKAB, BALAT, BALSU, BNTAS, BANVT, BARMA, BSRFK, BASGZ, BASCM, BEGYO, BTCIM, BSOKE, BYDNR, BAYRK, BERA, BRKT, BRKSN, BESLR, BJKAS, BEYAZ, BIENY, BIGTK, BLCYT, BLKOM, BIMAS, BINBN, BIOEN, BRKVY, BRKO, BIGEN, BRLSM, BRMEN, BIZIM, BLUME, BMSTL, BMSCH, BOBET, BORSK, BORLS, BRSAN, BRYAT, BFREN, BOSSA, BRISA, BULGS, BURCE, BURVA, BUCIM, BVSAN, BIGCH, CRFSA, CASA, CEMZY, CEOEM, CCOLA, CONSE, COSMO, CRDFA, CVKMD, CWENE, CGCAM, CAGFA, CMSAN, CANTE, CATES, CLEBI, CELHA, CLKMT, CEMAS, CEMTS, CMBTN, CMENT, CIMSA, CUSAN, DAGI, DAPGM, DARDL, DGATE, DCTTR, DGRVK, DMSAS, DENGE, DZGYO, DERIM, DERHL, DESA, DESPC, DEVA, DNISI, DIRIT, DITAS, DKVRL, DMRGD, DOCO, DOFER, DOHOL, DTRND, DGNMO, DOGVY, ARASE, DOGUB, DGGYO, DOAS, DOKTA, DURDO, DURKN, DUNYH, DNYVA, DYOBY, EBEBK, ECOGR, ECZYT, EDATA, EDIP, EFOR, EGEEN, EGGUB, EGPRO, EGSER, EPLAS, EGEGY, ECILC, EKER, EKIZ, EKOFA, EKOS, EKOVR, EKSUN, ELITE, EMKEL, EMNIS, EMIRV, EKGYO, EMVAR, ENJSA, ENERY, ENKAI, ENSRI, ERBOS, ERCB, EREGL, KIMMR, ERSU, ESCAR, ESCOM, ESEN, ETILR, EUKYO, EUYO, ETYAT, EUHOL, TEZOL, EUREN, EUPWR, EYGYO, FADE, FAIRF, FMIZP, FENER, FLAP, FONET, FROTO, FORMT, FRMPL, FORTE, FRIGO, FZLGY, GWIND, GSRAY, GARFA, GARFL, GRNYO, SNKRN, GEDIK, GEDZA, GLCVY, GENIL, GENTS, GEREL, GZNMI, GIPTA, GMTAS, GESAN, GLYHO, GOODY, GOKNR, GOLTS, GOZDE, GRTHO, GSDDE, GSDHO, GUBRF, GLRYH, GLRMK, GUNDG, GRSEL, SAHOL, HALKF, HLGYO, HLVKS, HRKET, HATEK, HATSN, HDFFL, HDFGS, HEDEF, HEKTS, HKTM, HTTBT, HOROZ, HUBVC, HUNER, HUZFA, HURGZ, ENTRA, ICBCT, ICUGS, INGRM, INVEO, INVES, ISKPL, IEYHO, IDGYO, IHEVA, IHLGM, IHGZT, IHAAS, IHLAS, IHYAY, IMASM, INALR, INDES, INFO, INTEK, INTEM, ISDMR, ISFAK, ISFIN, ISGYO, ISGSY, ISMEN, ISYAT, ISBIR, ISSEN, IZINV, IZENR, IZMDC, IZFAS, JANTS, KFEIN, KLKIM, KLSER, KAPLM, KRDMA, KRDMB, KRDMD, KAREL, KARSN, KRTEK, KARTN, KTLEV, KATMR, KAYSE, KENT, KRVGD, KERVN, KZBGY, KLGYO, KLRHO, KMPUR, KLMSN, KCAER, KCHOL, KOCMT, KLSYN, KNFRT, KONTR, KONYA, KONKA, KGYO, KORDS, KRPLS, KORTS, KOTON, KOPOL, KRGYO, KRSTL, KRONT, KSTUR, KUVVA, KUYAS, KBORU, KZGYO, KUTPO, KTSKR, LIDER, LIDFA, LILAK, LMKDC, LINK, LOGO, LKMNH, LRSHO, LUKSK, LYDHO, LYDYE, MACKO, MAKIM, MAKTK, MANAS, MAGEN, MARKA, MAALT, MRSHL, MRGYO, MARTI, MTRKS, MAVI, MZHLD, MEDTR, MEGMT, MEGAP, MEKAG, MNDRS, MEPET, MERCN, MERIT, MERKO, METRO, MTRYO, MEYSU, MHRGY, MIATK, MGROS, MSGYO, MPARK, MMCAS, MOBTL, MOGAN, MNDTR, MOPAS, EGEPO, NATEN, NTGAZ, NTHOL, NETAS, NIBAS, NUHCM, NUGYO, OBAMS, OBASE, ODAS, ODINE, OFSYM, ONCSM, ONRYT, ORCAY, ORGE, ORMA, OSMEN, OSTIM, OTKAR, OTTO, OYAKC, OYAYO, OYLUM, OZKGY, OZATD, OZGYO, OZRDN, OZSUB, OZYSR, PAMEL, PNLSN, PAGYO, PAPIL, PRFFK, PRDGS, PRKME, PARSN, PASEU, PSGYO, PAHOL, PATEK, PCILT, PGSUS, PEKGY, PENGD, PENTA, PSDTC, PETKM, PKENT, PETUN, PINSU, PNSUT, PKART, PLTUR, POLHO, POLTK, PRZMA, QFINF, QUAGR, RNPOL, RALYH, RAYSG, REEDR, RYGYO, RYSAS, RODRG, ROYAL, RGYAS, RTALB, RUBNS, SAFKR, SANEL, SNICA, SANFM, SANKO, SAMAT, SARKY, SARTN, SASA, SAYAS, SDTTR, SEGMN, SEKUR, SELEC, SELVA, SERNT, SRVGY, SEYKM, SILVR, SNGYO, SMRTG, SMART, SODSN, SOKE, SKTAS, SONME, SNPAM, SUMAS, SUNTK, SURGY, SUWEN, SEKFK, SEGYO, SKBNK, SOKM, TABGD, TNZTP, TARKM, TATGD, TATEN, TAVHL, TEKTU, TKFEN, TKNSA, TMPOL, TRHOL, TGSAS, TOASO, TRGYO, TRMET, TLMAN, TSPOR, TDGYO, TSGYO, TUCLK, TUKAS, TRCAS, TUREX, MARBL, TRILC, TCELL, TRKNT, TMSN, TUPRS, THYAO, PRKAB, TTKOM, TTRAK, TBORG, TURGG, GARAN, HALKB, ISCTR, TSKB, TURSG, SISE, VAKBN, UFUK, ULAS, ULUFA, ULUSE, ULUUN, USAK, ULKER, UNLU, VAKFN, VKGYO, VKFYO, VAKKO, VANGD, VBTYZ, VRGYO, VERUS, VERTU, VESBE, VESTL, VKING, YKBNK, YAPRK, YATAS, YYLGD, YAYLA, YGGYO, YEOTK, YGYO, YYAPI, YESIL, YBTAS, YIGIT, YONGA, YKSLN, YUNSA, ZGYO, ZEDUR, ZRGYO, ZOREN, BINHO"
 selected_stocks = [k.strip() + ".IS" for k in bist_raw.split(",") if k.strip()]
 
+# --- HESAPLAMA ---
 def calculate_t3(src, length, vf, multiplier):
     def ema(s, l): return s.ewm(span=l, adjust=False).mean()
     e1 = ema(src, length); e2 = ema(e1, length); e3 = ema(e2, length)
@@ -43,6 +48,7 @@ def check_formation(df, last_price):
 
 def process_ticker(ticker):
     try:
+        # Tek tek indirme GitHub bloklamasını önlemek için daha güvenlidir
         df_h = yf.download(ticker, period="60d", interval="1h", progress=False)
         df_d = yf.download(ticker, period="2y", interval="1d", progress=False)
         if df_h.empty or df_d.empty: return None
@@ -50,7 +56,6 @@ def process_ticker(ticker):
         last_close = df_h['Close'].iloc[-1]
         daily_200_sma = df_d['Close'].rolling(window=200).mean().iloc[-1]
 
-        # Periyot kontrolleri
         f1s = check_formation(df_h, last_close)
         df_2s = df_h.resample('2h').agg({'High':'max', 'Low':'min', 'Close':'last'}).dropna()
         f2s = check_formation(df_2s, last_close)
@@ -58,9 +63,9 @@ def process_ticker(ticker):
         f4s = check_formation(df_4s, last_close)
 
         score = sum([f1s, f2s, f4s])
-        
-        # MANTIK: Çift veya Full kombo ise SMA şartı yok. Tek sinyal ise SMA 200 üstü şart.
         if score == 0: return None
+        
+        # FILTRE: Çift/Full Kombo ise SMA şartı yok. Tek sinyal ise SMA 200 üstü şart.
         if score < 2 and last_close <= daily_200_sma: return None
 
         t_name = ticker.replace(".IS","")
@@ -73,7 +78,7 @@ def process_ticker(ticker):
         return {"type": g_type, "line": line}
     except: return None
 
-# --- ANALİZ ÇALIŞTIRMA ---
+# --- CALISTIRMA ---
 full_list, cift_list, tek_list = [], [], []
 
 with ThreadPoolExecutor(max_workers=5) as executor:
@@ -85,7 +90,7 @@ with ThreadPoolExecutor(max_workers=5) as executor:
             elif res["type"] == "CIFT": cift_list.append(res["line"])
             else: tek_list.append(res["line"])
 
-# --- MESAJLAŞTIRMA ---
+# --- MESAJ ---
 msg = ""
 if full_list:
     msg += "🔥 <b>FULL KOMBO (KRİTİK)</b> 🔥\n\n" + "\n\n".join(full_list) + "\n\n"
@@ -95,7 +100,7 @@ if tek_list:
     msg += "🔍 <b>TEK SİNYAL</b> 🔍\n\n" + "\n\n".join(tek_list) + "\n\n"
 
 if msg:
-    msg += "⚠️ <b>YASAL UYARI:</b>\n<i>Buradaki veriler indikatör bildirim sistemi olup yatırım tavsiyesi değildir.</i>"
+    msg += "⚠️ <b>YASAL UYARI:</b>\n<i>Yatırım tavsiyesi değildir.</i>"
     send_telegram_msg(msg)
 else:
-    send_telegram_msg("✅ Tarama yapıldı, kriterlere uyan yeni sinyal bulunamadı.")
+    send_telegram_msg("✅ Tarama bitti, kriterlere uyan sinyal şu an yok.")
